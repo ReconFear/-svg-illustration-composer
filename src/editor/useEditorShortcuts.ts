@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
 import { useEditorStore } from '../store/editorStore'
 
-/** Пользователь вводит текст — клавиши редактора не перехватываем. */
+const NON_TEXT_INPUT_TYPES = ['range', 'checkbox', 'radio', 'button', 'submit', 'reset', 'color']
+
+/** Пользователь вводит текст — клавиши редактора не перехватываем. Ползунок текстом не считается. */
 function isTextInput(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
-  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+  if (target instanceof HTMLInputElement) return !NON_TEXT_INPUT_TYPES.includes(target.type)
+  return target.isContentEditable || ['TEXTAREA', 'SELECT'].includes(target.tagName)
 }
 
 export function useEditorShortcuts() {

@@ -4,7 +4,9 @@ import { useEditorStore } from '../store/editorStore'
 import { getComponentById } from '../library'
 import { getPalette } from '../palettes'
 import { ComponentPreview } from '../editor/SvgNodes'
+import { MAX_SCALE, MIN_SCALE } from '../editor/geometry'
 import { EmptyState, PanelHeader } from './Panel'
+import { TransformControl } from './TransformControl'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -61,7 +63,7 @@ export function PropertiesPanel() {
   const items = useEditorStore((s) => s.composition.items)
   const selectedItemId = useEditorStore((s) => s.selectedItemId)
   const paletteId = useEditorStore((s) => s.composition.paletteId)
-  const { duplicateItem, removeItem, moveLayerUp, moveLayerDown } = useEditorStore.getState()
+  const { duplicateItem, removeItem, moveLayerUp, moveLayerDown, setItemScale, setItemRotation } = useEditorStore.getState()
 
   const layerIndex = items.findIndex((item) => item.id === selectedItemId)
   const selectedItem = layerIndex === -1 ? undefined : items[layerIndex]
@@ -88,6 +90,31 @@ export function PropertiesPanel() {
             <div className="grid grid-cols-2 gap-2">
               <ReadonlyField label="X" value={selectedItem.x} />
               <ReadonlyField label="Y" value={selectedItem.y} />
+            </div>
+          </Section>
+
+          <Section title="Трансформация">
+            <div className="flex flex-col gap-4">
+              <TransformControl
+                label="Масштаб"
+                value={selectedItem.scale * 100}
+                min={MIN_SCALE * 100}
+                max={MAX_SCALE * 100}
+                defaultValue={100}
+                suffix="%"
+                resetLabel="Сбросить масштаб до 100%"
+                onChange={(percent) => setItemScale(selectedItem.id, percent / 100)}
+              />
+              <TransformControl
+                label="Поворот"
+                value={selectedItem.rotation}
+                min={-180}
+                max={180}
+                defaultValue={0}
+                suffix="°"
+                resetLabel="Сбросить поворот до 0°"
+                onChange={(rotation) => setItemRotation(selectedItem.id, rotation)}
+              />
             </div>
           </Section>
 

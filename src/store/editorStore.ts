@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import type { CanvasItem, Composition } from '../types'
 import { cascadePosition, clampToCanvas, duplicatePosition } from '../composition/placement'
+import { clampScale, normalizeRotation, rotatedHalfExtents } from '../editor/geometry'
+import { getComponentById } from '../library'
 
 export const CANVAS_WIDTH = 1200
 export const CANVAS_HEIGHT = 800
@@ -25,13 +27,32 @@ interface EditorState {
   /** Добавляет экземпляр компонента на холст и выделяет его. Возвращает id нового объекта. */
   addItem: (componentId: string) => string
   selectItem: (id: string | null) => void
-  /** Перемещает центр объекта; координаты ограничиваются холстом. */
+  /** Перемещает центр объекта; габариты объекта ограничиваются холстом. */
   moveItem: (id: string, x: number, y: number) => void
+  /** Масштаб ограничивается MIN_SCALE…MAX_SCALE, позиция при необходимости сдвигается внутрь холста. */
+  setItemScale: (id: string, scale: number) => void
+  /** Угол в градусах, нормализуется в [-180, 180]; позиция при необходимости сдвигается внутрь холста. */
+  setItemRotation: (id: string, rotation: number) => void
   removeItem: (id: string) => void
   /** Копия кладётся сразу над оригиналом и выделяется. Возвращает id копии. */
   duplicateItem: (id: string) => string | null
   moveLayerUp: (id: string) => void
   moveLayerDown: (id: string) => void
+}
+
+/** Возвращает объект с центром, сдвинутым так, чтобы его rotated AABB оставался на холсте. */
+function keepInsideCanvas(item: CanvasItem, composition: Composition): CanvasItem {
+  const component = getComponentById(item.componentId)
+  if (!component) return item
+  const { halfX, halfY } = rotatedHalfExtents(item, component)
+  return { ...item, ...clampToCanvas(item.x, item.y, halfX, halfY, composition.width, composition.height) }
+}
+
+function updateItem(composition: Composition, id: string, update: (item: CanvasItem) => CanvasItem): Composition {
+  return {
+    ...composition,
+    items: composition.items.map((item) => (item.id === id ? keepInsideCanvas(update(item), composition) : item)),
+  }
 }
 
 /** Меняет местами объект и его соседа в порядке наложения. */
@@ -68,15 +89,17 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   selectItem: (id) => set({ selectedItemId: id }),
 
   moveItem: (id, x, y) =>
-    set(({ composition }) => {
-      const position = clampToCanvas(x, y, composition.width, composition.height)
-      return {
-        composition: {
-          ...composition,
-          items: composition.items.map((item) => (item.id === id ? { ...item, ...position } : item)),
-        },
-      }
-    }),
+    set(({ composition }) => ({ composition: updateItem(composition, id, (item) => ({ ...item, x, y })) })),
+
+  setItemScale: (id, scale) =>
+    set(({ composition }) => ({
+      composition: updateItem(composition, id, (item) => ({ ...item, scale: clampScale(scale) })),
+    })),
+
+  setItemRotation: (id, rotation) =>
+    set(({ composition }) => ({
+      composition: updateItem(composition, id, (item) => ({ ...item, rotation: normalizeRotation(rotation) })),
+    })),
 
   removeItem: (id) =>
     set(({ composition, selectedItemId }) => ({
@@ -89,10 +112,13 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     const index = composition.items.findIndex((item) => item.id === id)
     if (index === -1) return null
     const source = composition.items[index]
+    const component = getComponentById(source.componentId)
+    if (!component) return null
+    const { halfX, halfY } = rotatedHalfExtents(source, component)
     const copy: CanvasItem = {
       ...source,
       id: createItemId(),
-      ...duplicatePosition(source.x, source.y, composition.width, composition.height),
+      ...duplicatePosition(source.x, source.y, halfX, halfY, composition.width, composition.height),
     }
     const items = [...composition.items]
     items.splice(index + 1, 0, copy)

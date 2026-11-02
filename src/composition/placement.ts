@@ -1,22 +1,48 @@
+function clampAxis(value: number, halfExtent: number, size: number) {
+  // Объект крупнее холста по этой оси — центрируем, иначе держим габариты внутри.
+  if (halfExtent * 2 >= size) return size / 2
+  return Math.min(Math.max(value, halfExtent), size - halfExtent)
+}
+
 /**
- * Центр объекта всегда остаётся внутри холста — так объект не может
- * целиком уйти за границы, но его можно частично вынести за край.
+ * Ограничивает центр объекта так, чтобы его габариты (с учётом scale и rotation)
+ * целиком оставались в пределах холста. halfX/halfY — половины rotated AABB.
  */
-export function clampToCanvas(x: number, y: number, canvasWidth: number, canvasHeight: number) {
+export function clampToCanvas(
+  x: number,
+  y: number,
+  halfX: number,
+  halfY: number,
+  canvasWidth: number,
+  canvasHeight: number,
+) {
   return {
-    x: Math.min(Math.max(x, 0), canvasWidth),
-    y: Math.min(Math.max(y, 0), canvasHeight),
+    x: clampAxis(x, halfX, canvasWidth),
+    y: clampAxis(y, halfY, canvasHeight),
   }
 }
 
 const DUPLICATE_OFFSET = 24
-const DUPLICATE_EDGE = 60
 
-/** Позиция копии: правее и ниже оригинала, у края холста — в обратную сторону. */
-export function duplicatePosition(x: number, y: number, canvasWidth: number, canvasHeight: number) {
-  const dx = x + DUPLICATE_OFFSET > canvasWidth - DUPLICATE_EDGE ? -DUPLICATE_OFFSET : DUPLICATE_OFFSET
-  const dy = y + DUPLICATE_OFFSET > canvasHeight - DUPLICATE_EDGE ? -DUPLICATE_OFFSET : DUPLICATE_OFFSET
-  return clampToCanvas(x + dx, y + dy, canvasWidth, canvasHeight)
+/** Сдвиг копии по оси: вперёд, а если у края сдвинуться вперёд нельзя — назад. */
+function offsetAxis(value: number, halfExtent: number, size: number) {
+  const forward = clampAxis(value + DUPLICATE_OFFSET, halfExtent, size)
+  return forward !== value ? forward : clampAxis(value - DUPLICATE_OFFSET, halfExtent, size)
+}
+
+/** Позиция копии: правее и ниже оригинала, у края холста — в обратную сторону, габариты внутри холста. */
+export function duplicatePosition(
+  x: number,
+  y: number,
+  halfX: number,
+  halfY: number,
+  canvasWidth: number,
+  canvasHeight: number,
+) {
+  return {
+    x: offsetAxis(x, halfX, canvasWidth),
+    y: offsetAxis(y, halfY, canvasHeight),
+  }
 }
 
 const CASCADE_STEP = 36
