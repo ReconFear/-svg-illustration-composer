@@ -18,7 +18,7 @@ function commonPrefixLength(a: string, b: string): number {
 }
 
 /** Простая словоформа: «ракеты» ~ «ракета», «stars» ~ «star». Отличие только в окончании до 2 символов. */
-function isWordForm(query: string, word: string): boolean {
+export function isWordForm(query: string, word: string): boolean {
   const prefix = commonPrefixLength(query, word)
   return prefix >= 4 && prefix >= Math.max(query.length, word.length) - 2
 }
