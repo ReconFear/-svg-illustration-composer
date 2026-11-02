@@ -5,6 +5,7 @@
 export type ColorRole = 'primary' | 'secondary' | 'accent' | 'background' | 'neutral'
 
 export type SVGElementTag =
+  | 'g'
   | 'path'
   | 'circle'
   | 'ellipse'
@@ -13,12 +14,18 @@ export type SVGElementTag =
   | 'polyline'
   | 'line'
 
-/** Один графический элемент компонента. Геометрия в attrs не меняется при перекраске. */
+/**
+ * Один графический элемент компонента. Геометрия в attrs не меняется при перекраске.
+ * attrs хранятся с именами SVG-атрибутов (stroke-width, fill-rule) — в таком виде
+ * они попадают в экспорт; для React имена переводятся в camelCase при рендере.
+ * Цвет задаётся только ролями fill/stroke; элемент без fill рисуется с fill="none".
+ */
 export interface SVGElementNode {
   tag: SVGElementTag
-  attrs: Record<string, string | number>
+  attrs?: Record<string, string | number>
   fill?: ColorRole
   stroke?: ColorRole
+  children?: SVGElementNode[]
 }
 
 /** Компонент библиотеки (встроенный или импортированный пользователем). */
