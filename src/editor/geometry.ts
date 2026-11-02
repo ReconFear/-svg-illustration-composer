@@ -13,20 +13,25 @@ export function normalizeRotation(rotation: number): number {
   return ((((rotation + 180) % 360) + 360) % 360) - 180
 }
 
+/** Число для SVG-атрибута: до тысячных, без хвостов вида 1.9800000000000002 (холст и экспорт совпадают). */
+function num(value: number): number {
+  return Math.round(value * 1000) / 1000
+}
+
 /**
- * Transform группы объекта на холсте.
+ * Transform группы объекта на холсте и в экспорте.
  * Читается справа налево: центр viewBox компонента переносится в начало координат,
  * затем масштаб и поворот вокруг него, затем перенос в точку (x, y) холста.
  * Так x/y всегда остаются центром объекта, а scale/rotation — относительно центра.
  */
 export function itemTransform(item: CanvasItem, component: SVGComponent): string {
   const { width, height } = component.viewBox
-  return `translate(${item.x} ${item.y}) rotate(${item.rotation}) scale(${item.scale}) translate(${-width / 2} ${-height / 2})`
+  return `translate(${num(item.x)} ${num(item.y)}) rotate(${num(item.rotation)}) scale(${num(item.scale)}) translate(${num(-width / 2)} ${num(-height / 2)})`
 }
 
 /** Transform рамки выделения: центр и поворот объекта, но без масштаба — отступы и ручки не растягиваются. */
 export function itemFrameTransform(item: CanvasItem): string {
-  return `translate(${item.x} ${item.y}) rotate(${item.rotation})`
+  return `translate(${num(item.x)} ${num(item.y)}) rotate(${num(item.rotation)})`
 }
 
 /** Половина габаритов объекта на холсте до поворота (viewBox × scale). */

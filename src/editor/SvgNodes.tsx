@@ -1,7 +1,8 @@
 import { createElement, type ReactElement } from 'react'
-import type { ColorRole, SVGComponent, SVGElementNode } from '../types'
+import type { PaletteColors, SVGComponent, SVGElementNode } from '../types'
+import { PAINT_ATTRIBUTES, resolvePaint } from '../palettes'
 
-type Colors = Record<ColorRole, string>
+type Colors = PaletteColors
 
 /** stroke-width → strokeWidth: данные хранят SVG-имена атрибутов, React ждёт camelCase. */
 const toReactProp = (name: string) => name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
@@ -9,16 +10,16 @@ const toReactProp = (name: string) => name.replace(/-([a-z])/g, (_, c: string) =
 function renderNode(node: SVGElementNode, colors: Colors, key: number): ReactElement {
   const props: Record<string, string | number> = { key }
   if (node.attrs) {
-    for (const [name, value] of Object.entries(node.attrs)) props[toReactProp(name)] = value
+    for (const [name, value] of Object.entries(node.attrs)) {
+      if (!PAINT_ATTRIBUTES.has(name)) props[toReactProp(name)] = value
+    }
   }
 
   if (node.tag === 'g') {
     return createElement('g', props, node.children?.map((child, i) => renderNode(child, colors, i)))
   }
 
-  props.fill = node.fill ? colors[node.fill] : 'none'
-  if (node.stroke) props.stroke = colors[node.stroke]
-  return createElement(node.tag, props)
+  return createElement(node.tag, { ...props, ...resolvePaint(node, colors) })
 }
 
 /** Рисует элементы компонента в его собственной системе координат (0 0 w h). */

@@ -1,4 +1,4 @@
-import type { ColorRole, Palette, PaletteColors } from '../types'
+import type { ColorRole, Palette, PaletteColors, SVGElementNode } from '../types'
 
 export const COLOR_ROLES: ColorRole[] = ['primary', 'secondary', 'accent', 'background', 'neutral']
 
@@ -86,3 +86,17 @@ export function resolvePalette(paletteId: string, customColors: PaletteColors | 
   if (paletteId === CUSTOM_PALETTE_ID) return customColors ?? defaultPalette.colors
   return getPalette(paletteId).colors
 }
+
+/**
+ * Итоговые fill/stroke элемента по его цветовым ролям — одинаково для холста и экспорта.
+ * Без роли fill — 'none' (контурные элементы), stroke — отсутствует.
+ */
+export function resolvePaint(node: SVGElementNode, colors: PaletteColors): { fill: string; stroke?: string } {
+  return {
+    fill: node.fill ? colors[node.fill] : 'none',
+    ...(node.stroke ? { stroke: colors[node.stroke] } : {}),
+  }
+}
+
+/** Цвет задаётся только ролями; fill/stroke в attrs игнорируются, чтобы в результат не попали имена ролей. */
+export const PAINT_ATTRIBUTES = new Set(['fill', 'stroke'])
