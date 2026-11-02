@@ -7,11 +7,11 @@ import type { PaletteColors } from '../types'
 
 function Swatches({ colors }: { colors: PaletteColors }) {
   return (
-    <span className="flex shrink-0 -space-x-1">
+    <span className="flex shrink-0 -space-x-1.5">
       {COLOR_ROLES.map((role) => (
         <span
           key={role}
-          className="size-3.5 rounded-full ring-2 ring-white"
+          className="size-3 rounded-full ring-[1.5px] ring-white"
           style={{ backgroundColor: colors[role] }}
         />
       ))}
