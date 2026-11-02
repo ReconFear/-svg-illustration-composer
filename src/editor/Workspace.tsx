@@ -1,4 +1,5 @@
 import { useEditorStore } from '../store/editorStore'
+import { GenerationBar } from '../components/GenerationBar'
 import { Canvas } from './Canvas'
 
 export function Workspace() {
@@ -6,6 +7,7 @@ export function Workspace() {
 
   return (
     <main className="flex min-w-0 flex-1 flex-col bg-zinc-100">
+      <GenerationBar />
       <div className="canvas-fit-area flex min-h-0 flex-1 items-center justify-center m-6">
         <div className="canvas-fit relative">
           <Canvas />

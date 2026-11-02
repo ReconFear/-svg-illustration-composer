@@ -3,6 +3,7 @@ import type { CanvasItem, Composition } from '../types'
 import { cascadePosition, clampToCanvas, duplicatePosition } from '../composition/placement'
 import { clampScale, normalizeRotation, rotatedHalfExtents } from '../editor/geometry'
 import { getComponentById } from '../library'
+import { createItemId } from '../composition/ids'
 
 export const CANVAS_WIDTH = 1200
 export const CANVAS_HEIGHT = 800
@@ -16,10 +17,6 @@ export function createEmptyComposition(): Composition {
   }
 }
 
-function createItemId(): string {
-  return `item-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-}
-
 interface EditorState {
   projectName: string
   composition: Composition
@@ -27,6 +24,8 @@ interface EditorState {
   /** Добавляет экземпляр компонента на холст и выделяет его. Возвращает id нового объекта. */
   addItem: (componentId: string) => string
   selectItem: (id: string | null) => void
+  /** Заменяет все объекты композиции (результат автогенерации) и снимает выделение. */
+  replaceItems: (items: CanvasItem[]) => void
   /** Перемещает центр объекта; габариты объекта ограничиваются холстом. */
   moveItem: (id: string, x: number, y: number) => void
   /** Масштаб ограничивается MIN_SCALE…MAX_SCALE, позиция при необходимости сдвигается внутрь холста. */
@@ -87,6 +86,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
 
   selectItem: (id) => set({ selectedItemId: id }),
+
+  replaceItems: (items) => set(({ composition }) => ({ composition: { ...composition, items }, selectedItemId: null })),
 
   moveItem: (id, x, y) =>
     set(({ composition }) => ({ composition: updateItem(composition, id, (item) => ({ ...item, x, y })) })),

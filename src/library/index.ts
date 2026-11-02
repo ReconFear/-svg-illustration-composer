@@ -34,13 +34,14 @@ export function getComponentById(id: string): SVGComponent | undefined {
   return byId.get(id)
 }
 
-const normalize = (s: string) => s.trim().toLowerCase().replaceAll('ё', 'е')
+/** Нормализация для поиска: регистр, пробелы по краям, «ё» → «е». */
+export const normalizeText = (s: string) => s.trim().toLowerCase().replaceAll('ё', 'е')
 
 /** Поиск по id, названию, категории и тегам (ru/en), без учёта регистра и «ё». */
 export function searchComponents(components: SVGComponent[], query: string): SVGComponent[] {
-  const q = normalize(query)
+  const q = normalizeText(query)
   if (!q) return components
   return components.filter((c) =>
-    [c.id, c.name, c.category, ...c.tags.ru, ...c.tags.en].some((field) => normalize(field).includes(q)),
+    [c.id, c.name, c.category, ...c.tags.ru, ...c.tags.en].some((field) => normalizeText(field).includes(q)),
   )
 }
