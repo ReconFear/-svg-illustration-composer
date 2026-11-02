@@ -1,17 +1,15 @@
 import { useMemo, useState } from 'react'
 import { SearchX, Search, X } from 'lucide-react'
 import { builtinComponents, searchComponents } from '../library'
-import { getPalette } from '../palettes'
-import { useEditorStore } from '../store/editorStore'
+import { selectActiveColors, useEditorStore } from '../store/editorStore'
 import { ComponentPreview } from '../editor/SvgNodes'
 import { EmptyState, PanelHeader } from './Panel'
 
 export function LibraryPanel() {
   const [query, setQuery] = useState('')
-  const paletteId = useEditorStore((s) => s.composition.paletteId)
   const addItem = useEditorStore((s) => s.addItem)
 
-  const colors = getPalette(paletteId).colors
+  const colors = useEditorStore(selectActiveColors)
   const results = useMemo(() => searchComponents(builtinComponents, query), [query])
 
   return (

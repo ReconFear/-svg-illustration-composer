@@ -1,9 +1,10 @@
 import { create } from 'zustand'
-import type { CanvasItem, Composition } from '../types'
+import type { CanvasItem, ColorRole, Composition, PaletteColors } from '../types'
 import { cascadePosition, clampToCanvas, duplicatePosition } from '../composition/placement'
 import { clampScale, normalizeRotation, rotatedHalfExtents } from '../editor/geometry'
 import { getComponentById } from '../library'
 import { createItemId } from '../composition/ids'
+import { CUSTOM_PALETTE_ID, getPalette, resolvePalette } from '../palettes'
 
 export const CANVAS_WIDTH = 1200
 export const CANVAS_HEIGHT = 800
@@ -13,6 +14,8 @@ export function createEmptyComposition(): Composition {
     width: CANVAS_WIDTH,
     height: CANVAS_HEIGHT,
     paletteId: 'default',
+    customColors: null,
+    customPaletteName: null,
     items: [],
   }
 }
@@ -37,6 +40,12 @@ interface EditorState {
   duplicateItem: (id: string) => string | null
   moveLayerUp: (id: string) => void
   moveLayerDown: (id: string) => void
+  /** Готовая палитра или 'custom' (если пользовательская уже есть). Объекты не трогаются — меняется только таблица цветов. */
+  setPalette: (paletteId: string) => void
+  /** Загруженная пользователем палитра становится активной. */
+  setCustomPalette: (name: string, colors: PaletteColors) => void
+  /** Правка одного цвета: копия активной палитры становится пользовательской, пресеты не мутируются. */
+  setPaletteColor: (role: ColorRole, color: string) => void
 }
 
 /** Возвращает объект с центром, сдвинутым так, чтобы его rotated AABB оставался на холсте. */
@@ -136,4 +145,33 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     set(({ composition }) => ({
       composition: { ...composition, items: swapWithNeighbor(composition.items, id, -1) },
     })),
+
+  setPalette: (paletteId) =>
+    set(({ composition }) => {
+      if (paletteId === CUSTOM_PALETTE_ID && !composition.customColors) return {}
+      return { composition: { ...composition, paletteId } }
+    }),
+
+  setCustomPalette: (name, colors) =>
+    set(({ composition }) => ({
+      composition: { ...composition, paletteId: CUSTOM_PALETTE_ID, customColors: colors, customPaletteName: name },
+    })),
+
+  setPaletteColor: (role, color) =>
+    set(({ composition }) => {
+      const { paletteId, customColors, customPaletteName } = composition
+      const isCustom = paletteId === CUSTOM_PALETTE_ID
+      return {
+        composition: {
+          ...composition,
+          paletteId: CUSTOM_PALETTE_ID,
+          customColors: { ...resolvePalette(paletteId, customColors), [role]: color },
+          customPaletteName: isCustom ? customPaletteName : `${getPalette(paletteId).name} — своя`,
+        },
+      }
+    }),
 }))
+
+/** Эффективные цвета композиции для рендера. Ссылка стабильна, пока палитра не меняется. */
+export const selectActiveColors = (state: EditorState): PaletteColors =>
+  resolvePalette(state.composition.paletteId, state.composition.customColors)

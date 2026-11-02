@@ -1,7 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { useEditorStore } from '../store/editorStore'
+import { selectActiveColors, useEditorStore } from '../store/editorStore'
 import { getComponentById } from '../library'
-import { getPalette } from '../palettes'
 import { SvgNodes } from './SvgNodes'
 import { itemFrameTransform, itemTransform, scaledHalfSize } from './geometry'
 import type { CanvasItem } from '../types'
@@ -53,7 +52,7 @@ export function Canvas() {
   const selectedItemId = useEditorStore((s) => s.selectedItemId)
   const { selectItem, moveItem, setItemScale } = useEditorStore.getState()
   const { width, height, items } = composition
-  const colors = getPalette(composition.paletteId).colors
+  const colors = useEditorStore(selectActiveColors)
 
   const svgRef = useRef<SVGSVGElement>(null)
   const dragRef = useRef<DragState | null>(null)

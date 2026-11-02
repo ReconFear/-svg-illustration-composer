@@ -51,7 +51,7 @@ export interface SVGComponent {
 export interface Palette {
   id: string
   name: string
-  colors: Record<ColorRole, string>
+  colors: PaletteColors
 }
 
 /** Экземпляр компонента на холсте. x/y — центр объекта в координатах холста. */
@@ -65,10 +65,16 @@ export interface CanvasItem {
   rotation: number
 }
 
+export type PaletteColors = Record<ColorRole, string>
+
 /** Источник истины для холста и экспорта. Порядок items = порядок наложения (последний сверху). */
 export interface Composition {
   width: number
   height: number
+  /** id готовой палитры или 'custom' — тогда цвета берутся из customColors. */
   paletteId: string
+  /** Пользовательская палитра (загруженная или отредактированная); хранится, даже когда выбран пресет. */
+  customColors: PaletteColors | null
+  customPaletteName: string | null
   items: CanvasItem[]
 }
